@@ -13,9 +13,17 @@ import { useRouter } from "expo-router";
 import useFetch from "@/sevices/useFetch";
 import { fetchMovies } from "@/sevices/api";
 import MovieCard from "@/components/MovieCard";
+import { getTrendingMovies } from "@/sevices/appwrite";
+import TrendingCard from "@/components/TrendingCard";
 
 export default function Index() {
 	const router = useRouter();
+
+	const {
+		data: trendingMovies,
+		loading: trendingLoading,
+		error: trendingError,
+	} = useFetch(getTrendingMovies);
 
 	const {
 		data: movies,
@@ -33,14 +41,14 @@ export default function Index() {
 			>
 				<Image source={icons.logo} className="w-12 mb-5 mx-auto h-10 mt-20 " />
 
-				{moviesLoading ? (
+				{moviesLoading || trendingLoading ? (
 					<ActivityIndicator
 						className="mt-10 self-center"
 						size="large"
 						color="#0000ff"
 					/>
-				) : moviesError ? (
-					<Text>Error: {moviesError?.message}</Text>
+				) : moviesError || trendingError ? (
+					<Text>Error: {moviesError?.message || trendingError?.message}</Text>
 				) : (
 					<View className="flex-1 mt-5">
 						<SearchBar
@@ -48,16 +56,32 @@ export default function Index() {
 							placeholder="Search for film now guy"
 						/>
 
+						{trendingMovies && (
+							<View className="mb-3 mt-5 font-bold text-white text-lg">
+								Trending Movies
+							</View>
+						)}
+
 						<>
+							<FlatList
+								horizontal
+								showsHorizontalScrollIndicator={false}
+								ItemSeparatorComponent={() => <View className="w-4" />}
+								className="mb-4 mt-3"
+								data={trendingMovies}
+								renderItem={({ item, index }) => (
+									<TrendingCard movie={item} index={index} />
+								)}
+								keyExtractor={(item) => item.movie_id.toString()}
+							/>
+
 							<Text className="text-lg font-bold mt-5 mb-3 text-white">
 								Latest Movies
 							</Text>
 
 							<FlatList
 								data={movies}
-								renderItem={({ item }) => (
-									<MovieCard {...item} />
-								)}
+								renderItem={({ item }) => <MovieCard {...item} />}
 								keyExtractor={(item) => item.id.toString()}
 								numColumns={3}
 								columnWrapperStyle={{
